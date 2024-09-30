@@ -28,7 +28,20 @@ export default function Home() {
     const [latexExpression, setLatexExpression] = useState<Array<string>>([]);
     const [latexPosition, setLatexPosition] = useState({x:10, y:200});
     const [dictOfVars, setDictOfVars] = useState({});
-    const Draggable1: any = Draggable;
+
+    useEffect(() => {
+        if (latexExpression.length > 0 && window.MathJax) {
+            setTimeout(() => {
+                window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+            }, 0);
+        }
+    }, [latexExpression]);
+
+    useEffect(() => {
+        if (result) {
+            renderLatexToCanvas(result.expression, result.answer);
+        }
+    }, [result]);
 
     useEffect(() => {
         if (reset) {
@@ -39,20 +52,6 @@ export default function Home() {
             setReset(false);
         }
     }, [reset]);
-
-    useEffect(() => {
-        if (latexExpression.length > 0 && window.MathJax){
-            setTimeout(() => {
-                window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
-            }, 0);
-        }
-    }, [latexExpression]);
-
-    useEffect(() => {
-        if (result){
-            renderLatexToCanvas(result.expression, result.answer);
-        }
-    }, [result])
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -68,23 +67,24 @@ export default function Home() {
         }
 
         const script = document.createElement('script')
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/config/TeX-MML-AM_CHTML.js';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML';
         script.async = true;
         document.head.appendChild(script);
 
         script.onload = () => {
             window.MathJax.Hub.Config({
                 tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]}
-            })
+            });
         };
-
+        
         return () => {
             document.head.removeChild(script);
-        }
+        };
+
     }, []);
 
     const renderLatexToCanvas = (expression: string, answer: string) => {
-        const latex = `\\(\\LARGE{${expression} = ${answer}})`;
+        const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
         setLatexExpression([...latexExpression, latex]);
 
         const canvas = canvasRef.current;
@@ -231,19 +231,17 @@ export default function Home() {
             onMouseMove={draw}
             />
 
-            {latexExpression && latexExpression.map((latex, index) => {
-                <Draggable1
+            {latexExpression && latexExpression.map((latex, index) => (
+                <Draggable
                     key={index}
                     defaultPosition={latexPosition}
-                    onStop={(e, data) => setLatexPosition({x: data.x, y:data.y})} 
+                    onStop={(e, data) => setLatexPosition({ x: data.x, y: data.y })}
                 >
-                    <div
-                        className='absolute text-white'
-                    >
-                        <div className='latex-content'>{latex}</div>
+                    <div className="absolute p-2 text-white rounded shadow-md">
+                        <div className="latex-content">{latex}</div>
                     </div>
-                </Draggable1>
-            })}
+                </Draggable>
+            ))}
         </>
     );
 }
